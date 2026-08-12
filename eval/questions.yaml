@@ -1,0 +1,61 @@
+# Each question is either answerable (from the sample docs) or not.
+# `expect_document` / `expect_keywords` are loose checks used by eval.py, not exact-match.
+- id: q1
+  question: "How long do we keep financial and billing records?"
+  answerable: true
+  expect_document: "Data Retention Policy"
+  expect_keywords: ["7 years"]
+
+- id: q2
+  question: "Is multi-factor authentication required for employee accounts?"
+  answerable: true
+  expect_document: "Information Security Policy"
+  expect_keywords: ["MFA", "multi-factor"]
+
+- id: q3
+  question: "How quickly must we notify customers after a confirmed data breach?"
+  answerable: true
+  expect_document: "Incident Response Policy"
+  expect_keywords: ["72 hours"]
+
+- id: q4
+  question: "What's the maximum value of a gift an employee can accept from a vendor?"
+  answerable: true
+  expect_document: "Code of Conduct"
+  expect_keywords: ["100"]
+
+- id: q5
+  question: "Can employees use personal AI tools to process customer data?"
+  answerable: true
+  expect_document: "Acceptable Use Policy"
+  expect_keywords: ["unapproved", "SaaS"]
+
+- id: q6
+  question: "How often are production system access rights reviewed?"
+  answerable: true
+  expect_document: "Information Security Policy"
+  expect_keywords: ["quarterly"]
+
+- id: q7
+  question: "What is the company's policy on remote work stipends?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+- id: q8
+  question: "What's the maximum PTO an employee can carry over into next year?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+- id: q9
+  question: "Does the company reimburse employees for home internet?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+- id: q10
+  question: "How long are employee personnel records kept after termination?"
+  answerable: true
+  expect_document: "Data Retention Policy"
+  expect_keywords: ["6 years"]

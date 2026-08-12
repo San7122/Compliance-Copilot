@@ -1,0 +1,5 @@
+# Without this, `COPY . .` overwrites the container's node_modules with the host's,
+# which breaks platform-specific binaries (esbuild, rollup) on a different arch.
+node_modules
+dist
+.env
