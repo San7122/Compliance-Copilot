@@ -1,61 +1,130 @@
-# Each question is either answerable (from the sample docs) or not.
-# `expect_document` / `expect_keywords` are loose checks used by eval.py, not exact-match.
+# Evaluation set for the Northwind policy corpus (26 PDFs in /docs).
+#
+# `expect_document` is matched exactly against the `document` field of returned
+# citations, so it must be the document's title as parsed from its front matter.
+# `expect_keywords` are ALTERNATIVES -- any one matching counts as correct, because a
+# fact usually has several equally-correct phrasings ("4 hours" / "four (4) hours").
+#
+# The set deliberately covers the three cases the corpus is built to test, per its own
+# notes: questions with a clear single answer, questions where two documents appear to
+# disagree, and questions the documents genuinely do not answer.
+
+# ---------------------------------------------------------------------------
+# Clear single answers
+# ---------------------------------------------------------------------------
+
+# q1 is also the superseded-document trap. The current policy (NFS-POL-001 v2.1 cl 7.1)
+# says four hours; the superseded NFS-POL-001-A v1.4 cl 5.1 says eight. The superseded
+# document is fluent, on-topic and highly retrievable, so a system that does not exclude
+# it by status will often answer "8 hours" with a confident citation to withdrawn policy.
 - id: q1
-  question: "How long do we keep financial and billing records?"
+  question: "How quickly must a suspected personal data breach be reported to the Data Protection Officer?"
   answerable: true
-  expect_document: "Data Retention Policy"
-  expect_keywords: ["7 years"]
+  expect_document: "Data Protection and Privacy Policy"
+  expect_keywords: ["four (4) hours", "4 hours", "four hours"]
 
 - id: q2
-  question: "Is multi-factor authentication required for employee accounts?"
+  question: "What is the maximum value of a gift an employee can accept without prior approval?"
   answerable: true
-  expect_document: "Information Security Policy"
-  expect_keywords: ["MFA", "multi-factor"]
+  expect_document: "Code of Conduct and Conflicts of Interest Policy"
+  expect_keywords: ["INR 5,000", "5,000", "5000"]
 
 - id: q3
-  question: "How quickly must we notify customers after a confirmed data breach?"
+  question: "What key length is required for symmetric encryption?"
   answerable: true
-  expect_document: "Incident Response Policy"
-  expect_keywords: ["72 hours"]
+  expect_document: "Cryptographic Standard"
+  expect_keywords: ["AES-256", "256 bits", "256"]
 
 - id: q4
-  question: "What's the maximum value of a gift an employee can accept from a vendor?"
+  question: "What is the minimum password length for privileged accounts?"
   answerable: true
-  expect_document: "Code of Conduct"
-  expect_keywords: ["100"]
+  expect_document: "Access Control Standard"
+  expect_keywords: ["fourteen (14)", "14 characters", "14"]
 
 - id: q5
-  question: "Can employees use personal AI tools to process customer data?"
+  question: "How long does the company have to respond to a verified data subject request?"
   answerable: true
-  expect_document: "Acceptable Use Policy"
-  expect_keywords: ["unapproved", "SaaS"]
+  expect_document: "Data Protection and Privacy Policy"
+  expect_keywords: ["thirty (30)", "30 calendar days", "30 days"]
 
 - id: q6
-  question: "How often are production system access rights reviewed?"
+  question: "How long before a regulatory submission deadline does the change freeze start?"
   answerable: true
-  expect_document: "Information Security Policy"
-  expect_keywords: ["quarterly"]
+  expect_document: "Regulatory Reporting Calendar and Change Freeze Schedule"
+  expect_keywords: ["three (3)", "3 business days", "three business days"]
 
 - id: q7
-  question: "What is the company's policy on remote work stipends?"
-  answerable: false
-  expect_document: null
-  expect_keywords: []
+  question: "When is multi-factor authentication required?"
+  answerable: true
+  expect_document: "Access Control Standard"
+  expect_keywords: ["remote access", "privileged", "multi-factor", "MFA"]
 
 - id: q8
-  question: "What's the maximum PTO an employee can carry over into next year?"
-  answerable: false
-  expect_document: null
-  expect_keywords: []
-
-- id: q9
-  question: "Does the company reimburse employees for home internet?"
-  answerable: false
-  expect_document: null
-  expect_keywords: []
-
-- id: q10
-  question: "How long are employee personnel records kept after termination?"
+  question: "How long must records relating to a filed suspicious transaction report be kept?"
   answerable: true
-  expect_document: "Data Retention Policy"
-  expect_keywords: ["6 years"]
+  expect_document: "Know Your Customer and Anti-Money-Laundering Policy"
+  expect_keywords: ["ten (10)", "10 years", "ten years"]
+
+# ---------------------------------------------------------------------------
+# Conflicts: two documents appear to disagree
+# ---------------------------------------------------------------------------
+
+# Precedence conflict, resolved WITHIN the group. NFS-POL-001 cl 5.1 says seven years;
+# the Records Retention Schedule (NFS-POL-011) Annexure A says eight, and its clause 1.2
+# states the schedule governs except where the policy period is longer. Eight years is
+# correct, and NFS-POL-011 Annexure B works exactly this case through as an example.
+# A system that simply retrieves the most similar chunk answers "7 years".
+- id: q9
+  question: "How long must financial transaction records be retained?"
+  answerable: true
+  expect_document: "Records Retention Schedule"
+  expect_keywords: ["8 years", "eight (8)", "eight years"]
+
+# Entity conflict. Group policy (NFS-POL-003 cl 5.1) says five years; Northwind Capital
+# Markets (NFS-SUB-002 cl 5.1) says seven for the same record category. The expected
+# answer is the group figure, because no entity was named in the question -- but a good
+# answer also flags that Capital Markets differs. `expect_keywords` cannot express
+# "mentions both", so the flagging behaviour is assessed by reading the answer text.
+- id: q10
+  question: "How long must KYC records be retained?"
+  answerable: true
+  expect_document: "Know Your Customer and Anti-Money-Laundering Policy"
+  expect_keywords: ["five (5)", "5 years", "five years"]
+
+- id: q11
+  question: "How often must high-risk customers be re-verified?"
+  answerable: true
+  expect_document: "Know Your Customer and Anti-Money-Laundering Policy"
+  expect_keywords: ["twelve (12)", "12 months", "annually"]
+
+# ---------------------------------------------------------------------------
+# Genuinely unanswerable -- the corpus is security, compliance and operations only.
+# Each term below was confirmed absent from the full extracted text of all 26 documents.
+# ---------------------------------------------------------------------------
+
+- id: q12
+  question: "How many days of parental leave are employees entitled to?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+- id: q13
+  question: "Does the company provide health insurance to employees' dependants?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+- id: q14
+  question: "What is the notice period an employee must serve when resigning?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []
+
+# Plausible-sounding and adjacent to real policy topics, but not covered anywhere. This
+# is the harder refusal: the corpus discusses remote access at length, so retrieval will
+# surface confident, closely-related text that does not answer the question asked.
+- id: q15
+  question: "What monthly stipend does the company pay towards home internet for remote workers?"
+  answerable: false
+  expect_document: null
+  expect_keywords: []

@@ -1,7 +1,13 @@
-"""Run with: python -m scripts.run_ingest
-Waits briefly for Postgres to be ready (useful on `docker compose up` cold start,
-where the backend container can start before Postgres finishes init), then ingests
-every .md file in app.config.settings.docs_dir.
+"""Run the offline ingestion pipeline.
+
+    python -m scripts.run_ingest
+
+Waits briefly for Postgres to be ready (useful on `docker compose up` cold start, where
+the backend container can start before Postgres finishes init), then ingests every .pdf
+and .md file in app.config.settings.docs_dir.
+
+Safe to re-run: documents whose content hash is unchanged are skipped without being
+re-embedded, so adding a few new files costs only those files.
 """
 
 import sys
@@ -11,7 +17,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from app.db import SessionLocal, engine
-from app.ingest import run_ingest
+from app.ingestion.pipeline import run_ingest
 
 
 def wait_for_db(max_wait_seconds: int = 30):

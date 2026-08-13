@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-copilot}
       POSTGRES_DB: ${POSTGRES_DB:-compliance_copilot}
     ports:
-      - "5432:5432"
+      # Host port only -- the backend reaches Postgres at db:5432 over the compose
+      # network regardless. Override when the host already runs Postgres on 5432.
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/app/init.sql:/docker-entrypoint-initdb.d/init.sql

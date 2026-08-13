@@ -27,6 +27,7 @@ from pathlib import Path
 
 import requests
 import yaml
+from pypdf import PdfReader
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
@@ -36,13 +37,33 @@ def normalize(text: str) -> str:
 
 
 def load_doc_texts() -> dict[str, str]:
-    """Map document title (first H1) -> normalized full text, for citation checking."""
-    texts = {}
-    for path in DOCS_DIR.glob("*.md"):
-        raw = path.read_text(encoding="utf-8")
-        match = re.search(r"^#\s+(.*)", raw, re.MULTILINE)
-        title = match.group(1).strip() if match else path.stem
-        texts[title] = normalize(raw)
+    """Map document title -> normalized full text, read straight from the source files.
+
+    Deliberately re-derived from the PDFs rather than taken from the API. The point of
+    checking citations here is to verify the whole chain against the documents on disk;
+    asking the service to confirm its own citations would only prove it is internally
+    consistent.
+
+    The title is taken as the first line of page 1 that isn't page furniture, which is
+    how the ingestion side derives it too -- the citation's `document` field must match
+    this key for the lookup to succeed.
+    """
+    texts: dict[str, str] = {}
+    for path in sorted(DOCS_DIR.glob("*.pdf")):
+        pages = [page.extract_text() or "" for page in PdfReader(str(path)).pages]
+        full = "\n".join(pages)
+        lines = [
+            line.strip()
+            for line in full.splitlines()
+            if line.strip()
+            and " | " not in line
+            and not line.startswith("Fictional document created")
+            and not re.match(r"^Page\s+\d+\s*$", line.strip())
+        ]
+        title = lines[0] if lines else path.stem
+        if title.endswith("-") and len(lines) > 1:  # long subsidiary titles wrap
+            title = f"{title} {lines[1]}".strip()
+        texts[title] = normalize(full)
     return texts
 
 
@@ -87,7 +108,9 @@ def run(api_url: str, questions_path: Path):
     rows = []
     for q in questions:
         try:
-            resp = requests.post(f"{api_url}/query", json={"question": q["question"]}, timeout=60)
+            resp = requests.post(
+                f"{api_url}/api/query", json={"question": q["question"]}, timeout=60
+            )
             resp.raise_for_status()
             data = resp.json()
         except Exception as e:
@@ -104,7 +127,9 @@ def run(api_url: str, questions_path: Path):
             )
             continue
 
-        refusal_ok = data["answerable"] == q["answerable"]
+        # `grounded` is the API's answer-vs-refusal signal; the question set expresses
+        # the same expectation as `answerable`.
+        refusal_ok = data["grounded"] == q["answerable"]
 
         retrieval_ok = None
         if q["answerable"]:
@@ -132,8 +157,9 @@ def run(api_url: str, questions_path: Path):
                 "id": q["id"],
                 "question": q["question"],
                 "expected_answerable": q["answerable"],
-                "got_answerable": data["answerable"],
+                "got_answerable": data["grounded"],
                 "confidence": data["confidence"],
+                "refusal_reason": data.get("refusal_reason"),
                 "refusal_ok": refusal_ok,
                 "retrieval_ok": retrieval_ok,
                 "citation_ok": citation_ok,

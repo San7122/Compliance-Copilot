@@ -7,3 +7,6 @@ dist/
 venv/
 .venv/
 *.egg-info/
+
+# Local tooling notes, not part of the deliverable
+skill-observations/
